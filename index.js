@@ -83,7 +83,7 @@ function escapeGeometryType(val) {
     return `GeomFromText('${escape(val)}')`;
 }
 
-function buildInsert(mysql, rows, table) {
+function buildInsert(mysql, options, rows, table) {
     const cols = _.keys(rows[0]);
     const sql = [];
     for (const i in rows) {
@@ -117,7 +117,7 @@ function buildInsert(mysql, rows, table) {
                     values.push('\'\'');
                 }
             }
-            sql.push(`INSERT INTO \`${table}\` (\`${cols.join('`,`')}\`) VALUES (${values.join()});`);
+            options.next(`INSERT INTO \`${table}\` (\`${cols.join('`,`')}\`) VALUES (${values.join()});`);
         }
     }
     return sql.join('\n');
@@ -162,7 +162,7 @@ async function createSchemaDump(mysql, options, tables) {
             if (!options.autoIncrement) {
                 r = r.replace(/AUTO_INCREMENT=\d+ /g, '');
             }
-            res.push(r);
+            options.next(r);
         }
     }
     return res;
@@ -199,21 +199,15 @@ async function createDataDump(mysql, options, tables) {
         mysql.select(
             opts,
             function (err, data) {
-                err ? reject(err) : resolve(buildInsert(mysql, data, table));
+                err ? reject(err) : resolve(buildInsert(mysql, options, data, table));
             },
             typeCastOptions
         );
     })));
 }
 
-function getDump(dump = {
-    schema: [],
-    data: []
-}) {
-    return [...dump.schema, ...dump.data].join('\n\n');
-}
-
 exports = module.exports = async function (options = {}) {
+    var output = []
     const defaultOptions = {
         // default connection
         host: 'localhost',
@@ -227,7 +221,9 @@ exports = module.exports = async function (options = {}) {
         ifNotExist: true,
         autoIncrement: true,
         dropTable: false,
-        where: null
+        where: null,
+        next: line => output.push(line),
+        complete: () => (output = output.join('\n'))
     };
     const opts = _.merge(defaultOptions, options);
     const connectionOptions = ['host', 'user', 'password', 'database', 'port', 'socketPath'];
@@ -240,11 +236,10 @@ exports = module.exports = async function (options = {}) {
     const mysql = mqNode(defaultConnection);
 
     const tables = await getTables(mysql, opts);
+    tables.forEach(opts.next)
     const schema = await createSchemaDump(mysql, opts, tables);
     const data = await createDataDump(mysql, opts, tables);
-    const dump = getDump({
-        data,
-        schema
-    });
-    return dump;
+    opts.complete();
+    mysql.end();
+    return output;
 };

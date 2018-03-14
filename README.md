@@ -78,7 +78,7 @@ Type: `String`
 
 Name of the database to dump.
 
-#### tables 
+#### tables
 
 Type: `Array`
 
@@ -86,13 +86,13 @@ Array of tables that you want to backup.
 
 Leave Blank for All. `Default: [] ALL`
 
-#### schema 
+#### schema
 
 Type: `Boolean`
 
 Output table structure `Default: true`;
 
-#### data 
+#### data
 
 Type: `Boolean`
 
@@ -105,19 +105,19 @@ Where clauses to limit dumped data `Example: where: {'users': 'id < 1000'}`
 
 Combine with `data: false` to only dump tables with where clauses  `Default: null`;
 
-#### ifNotExist 
+#### ifNotExist
 
 Type: `Boolean`
 
 Create tables if not exist method `Default: true`;
 
-#### dropTable 
+#### dropTable
 
 Type: `Boolean`
 
 Drop tables if exist `Default: false`;
 
-#### getDump 
+#### getDump
 
 Type: `Boolean`
 
@@ -130,6 +130,12 @@ Type: `String`
 Path to a unix domain socket to connect to. When used `host` and `port` are ignored.
 
 [![npm](https://nodei.co/npm/mysql-backup.png?downloads=true&downloadRank=true&stars=true)](https://www.npmjs.com/package/mysql-backup)
+
+#### next & complete
+
+Type: `Function`
+
+Stream data instead of compose giant string. `next` is called with text, `complete` is called upon completion.
 
 ---------------------------------
 
